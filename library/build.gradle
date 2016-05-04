@@ -6,9 +6,9 @@ def versionMajor = 3
 def versionMinor = 0
 def versionPatch = 0
 
-def libraryGroupId = 'com.devbrackets.android'
+def libraryGroupId = 'com.staticbloc'
 def libraryBaseName = 'exomedia'
-def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}" // release version
+def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}-preview2" // release version
 
 dependencies {
     // Android
@@ -63,7 +63,7 @@ uploadArchives {
     }
 }
 
-// ======= BINTRAY DEPLOY (command: $ ./gradlew clean build bintrayUpload -PbintrayUser=BINTRAY_USERNAME -PbintrayKey=BINTRAY_KEY -PdryRun=false) ====
+// ======= BINTRAY DEPLOY (command: $ ./gradlew clean build bintrayUpload -PbintrayUser=eygraber -PbintrayKey=BINTRAY_KEY -PdryRun=false) ====
 publish {
     groupId = libraryGroupId
     artifactId = libraryBaseName
