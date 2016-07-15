@@ -8,7 +8,7 @@ def versionPatch = 1
 
 def libraryGroupId = 'com.staticbloc'
 def libraryBaseName = 'exomedia'
-def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}-preview3" // release version
+def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}" // release version
 
 dependencies {
     // Android
