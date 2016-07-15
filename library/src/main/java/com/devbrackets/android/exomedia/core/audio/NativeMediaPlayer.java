@@ -31,11 +31,23 @@ import com.google.android.exoplayer.MediaFormat;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * A simple MediaPlayer implementation that extends the
+ * one provided by the system to add integration with
+ * the {@link EMListenerMux} and to mitigate state errors.
+ * <p>
+ * NOTE: The <code>listenerMux</code> shouldn't be null when any
+ * method utilizing it is called, however there are some cases on
+ * Amazon devices where they incorrectly call these methods when
+ * setting up the MediaPlayer (when in IDLE state)
+ */
 public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, MediaPlayer.OnBufferingUpdateListener {
     private static final String TAG = "NativeMediaPlayer";
 
     protected int currentBufferPercent = 0;
     protected EMListenerMux listenerMux;
+
+    protected int requestedSeek;
 
     public NativeMediaPlayer(Context context) {
         super();
@@ -50,6 +62,7 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
     @Override
     public void setDataSource(Context context, Uri uri, RenderBuilder renderBuilder) {
         try {
+            requestedSeek = 0;
             super.setDataSource(context, uri);
         } catch (Exception e) {
             Log.d(TAG, "MediaPlayer: error setting data source", e);
@@ -68,7 +81,10 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
     @Override
     public void start() {
         super.start();
-        listenerMux.setNotifiedCompleted(false);
+
+        if (listenerMux != null) {
+            listenerMux.setNotifiedCompleted(false);
+        }
     }
 
     @Override
@@ -78,7 +94,7 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
 
     @Override
     public boolean restart() {
-        if (!listenerMux.isPrepared()) {
+        if (listenerMux == null || !listenerMux.isPrepared()) {
             return false;
         }
 
@@ -92,7 +108,7 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
 
     @Override
     public int getDuration() {
-        if (!listenerMux.isPrepared()) {
+        if (listenerMux == null || !listenerMux.isPrepared()) {
             return 0;
         }
 
@@ -101,7 +117,7 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
 
     @Override
     public int getCurrentPosition() {
-        if (!listenerMux.isPrepared()) {
+        if (listenerMux == null || !listenerMux.isPrepared()) {
             return 0;
         }
 
@@ -115,11 +131,12 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
 
     @Override
     public void seekTo(int msec) {
-        if (!listenerMux.isPrepared()) {
-            return;
+        if (listenerMux != null && listenerMux.isPrepared()) {
+            super.seekTo(msec);
+            requestedSeek = 0;
+        } else {
+            requestedSeek = msec;
         }
-
-        super.seekTo(msec);
     }
 
     @Override
@@ -152,5 +169,12 @@ public class NativeMediaPlayer extends MediaPlayer implements MediaPlayerApi, Me
     @Override
     public void onBufferingUpdate(MediaPlayer mp, int percent) {
         currentBufferPercent = percent;
+    }
+
+    @Override
+    public void onMediaPrepared() {
+        if (requestedSeek != 0) {
+            seekTo(requestedSeek);
+        }
     }
 }

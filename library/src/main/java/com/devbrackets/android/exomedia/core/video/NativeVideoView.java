@@ -137,6 +137,10 @@ public class NativeVideoView extends TextureVideoView implements VideoViewApi {
         seekTo(0);
         start();
 
+        //Makes sure the listeners get the onPrepared callback
+        listenerMux.setNotifiedPrepared(false);
+        listenerMux.setNotifiedCompleted(false);
+
         return true;
     }
 
@@ -180,12 +184,9 @@ public class NativeVideoView extends TextureVideoView implements VideoViewApi {
 
     @Override
     public void onVideoSizeChanged(int width, int height) {
-        //Purposefully left blank
-    }
-
-    @Override
-    public void setOnSizeChangedListener(@Nullable OnSurfaceSizeChanged listener) {
-        //Purposefully left blank
+        if (updateVideoSize(width, height)) {
+            requestLayout();
+        }
     }
 
     protected void setup() {

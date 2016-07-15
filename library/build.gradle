@@ -4,7 +4,7 @@ apply plugin: 'bintray-release'
 
 def versionMajor = 3
 def versionMinor = 0
-def versionPatch = 0
+def versionPatch = 1
 
 def libraryGroupId = 'com.staticbloc'
 def libraryBaseName = 'exomedia'
@@ -12,19 +12,19 @@ def libraryVersion = "${versionMajor}.${versionMinor}.${versionPatch}-preview3" 
 
 dependencies {
     // Android
-    compile 'com.android.support:appcompat-v7:23.4.0' // includes support-v4
+    compile 'com.android.support:appcompat-v7:24.0.0' // includes support-v4
 
     // ExoPlayer
-    compile 'com.google.android.exoplayer:exoplayer:r1.5.8'
+    compile 'com.google.android.exoplayer:exoplayer:r1.5.9'
 }
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 24
     buildToolsVersion '23.0.3'
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 23
+        targetSdkVersion 24
 
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"

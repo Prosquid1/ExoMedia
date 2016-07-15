@@ -23,6 +23,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.FloatRange;
 import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.Surface;
@@ -38,6 +39,7 @@ import com.devbrackets.android.exomedia.core.builder.SmoothStreamRenderBuilder;
 import com.devbrackets.android.exomedia.core.exoplayer.EMExoPlayer;
 import com.devbrackets.android.exomedia.core.api.VideoViewApi;
 import com.devbrackets.android.exomedia.type.MediaSourceType;
+import com.devbrackets.android.exomedia.util.MediaSourceUtil;
 import com.google.android.exoplayer.MediaFormat;
 import com.google.android.exoplayer.audio.AudioCapabilities;
 import com.google.android.exoplayer.audio.AudioCapabilitiesReceiver;
@@ -50,7 +52,7 @@ import java.util.Map;
  * as the backing media player.
  */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-public class ExoVideoView extends ResizingTextureView implements VideoViewApi, AudioCapabilitiesReceiver.Listener, ResizingTextureView.OnSizeChangeListener  {
+public class ExoVideoView extends ResizingTextureView implements VideoViewApi, AudioCapabilitiesReceiver.Listener {
     protected static final String USER_AGENT_FORMAT = "EMVideoView %s / Android %s / %s";
 
     protected EMExoPlayer emExoPlayer;
@@ -59,9 +61,6 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
 
     protected EMListenerMux listenerMux;
     protected boolean playRequested = false;
-
-    @Nullable
-    protected OnSurfaceSizeChanged onSurfaceSizeChangedListener;
 
     public ExoVideoView(Context context) {
         super(context);
@@ -85,7 +84,7 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
 
     @Override
     public void setVideoUri(@Nullable Uri uri) {
-        RenderBuilder builder = uri == null ? null : getRendererBuilder(MediaSourceType.get(uri), uri);
+        RenderBuilder builder = uri == null ? null : getRendererBuilder(MediaSourceUtil.getType(uri), uri);
         setVideoUri(uri, builder);
     }
 
@@ -111,10 +110,9 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
             return false;
         }
 
-        listenerMux.setNotifiedCompleted(false);
-
         //Makes sure the listeners get the onPrepared callback
         listenerMux.setNotifiedPrepared(false);
+        listenerMux.setNotifiedCompleted(false);
 
         return true;
     }
@@ -201,13 +199,6 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
     }
 
     @Override
-    public void onVideoSurfaceSizeChange(int width, int height) {
-        if (onSurfaceSizeChangedListener != null) {
-            onSurfaceSizeChangedListener.onSurfaceSizeChanged(width, height);
-        }
-    }
-
-    @Override
     public void onAudioCapabilitiesChanged(AudioCapabilities audioCapabilities) {
         if (!audioCapabilities.equals(this.audioCapabilities)) {
             this.audioCapabilities = audioCapabilities;
@@ -237,11 +228,6 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
         }
     }
 
-    @Override
-    public void setOnSizeChangedListener(@Nullable OnSurfaceSizeChanged listener) {
-        onSurfaceSizeChangedListener = listener;
-    }
-
     protected void setup() {
         audioCapabilitiesReceiver = new AudioCapabilitiesReceiver(getContext().getApplicationContext(), this);
         audioCapabilitiesReceiver.register();
@@ -250,7 +236,7 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
         //Sets the internal listener
         emExoPlayer.setMetadataListener(null);
         setSurfaceTextureListener(new EMExoVideoSurfaceTextureListener());
-        setOnSizeChangeListener(this);
+
         updateVideoSize(0, 0);
     }
 
@@ -261,7 +247,7 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
      * @param uri The video's Uri
      * @return The appropriate RenderBuilder
      */
-    protected RenderBuilder getRendererBuilder(MediaSourceType renderType, Uri uri) {
+    protected RenderBuilder getRendererBuilder(@NonNull MediaSourceType renderType, @NonNull Uri uri) {
         switch (renderType) {
             case HLS:
                 return new HlsRenderBuilder(getContext().getApplicationContext(), getUserAgent(), uri.toString());
@@ -287,8 +273,7 @@ public class ExoVideoView extends ResizingTextureView implements VideoViewApi, A
     protected class EMExoVideoSurfaceTextureListener implements TextureView.SurfaceTextureListener {
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
-            surface = new Surface(surfaceTexture);
-            emExoPlayer.setSurface(surface);
+            emExoPlayer.setSurface(new Surface(surfaceTexture));
             if (playRequested) {
                 emExoPlayer.setPlayWhenReady(true);
             }
